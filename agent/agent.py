@@ -59,12 +59,15 @@ class AutoFixAssistant:
         field: Annotated[str, "Exact field name: owner_name, phone, vehicle_make, vehicle_model, year, reg_number, issue, or urgency"],
         value: Annotated[str, "The validated non-empty value spoken by the caller"],
     ):
+        logger.info(f"save_info called: field={field}, value={value}")
         field = field.lower().strip().replace(" ", "_")
         if field not in self.collected_data:
+            logger.warning(f"Unknown field '{field}'")
             return f"Unknown field '{field}'. Do not proceed — ask again."
 
         value = value.strip()
         if not value or len(value) < 2:
+            logger.warning(f"Value empty or too short: '{value}'")
             return "Value is empty or too short. Do not save — ask the caller again."
 
         # Basic per-field validation
@@ -198,6 +201,7 @@ async def entrypoint(ctx: JobContext):
     # ── Track last user text to deduplicate partial transcripts ───────────────
     last_user_text = {"val": "", "ts": 0}
 
+    logger.info("Creating AgentSession with STT (Deepgram), LLM (GROQ), TTS (Cartesia)")
     session = AgentSession(
         vad=silero.VAD.load(),
         stt=deepgram.STT(
@@ -219,6 +223,7 @@ async def entrypoint(ctx: JobContext):
             language="en",
         ),
     )
+    logger.info("AgentSession created successfully")
 
     # ── User speech → chat bubble (deduplicated) ───────────────────────────────
     @session.on("user_input_transcribed")
@@ -310,25 +315,36 @@ async def entrypoint(ctx: JobContext):
     )
 
     # session.start() in livekit-agents 1.5.x only takes agent= and room=
-    await session.start(
-        agent=Agent(
-            instructions=INSTRUCTIONS,
-            tools=llm.find_function_tools(assistant),
-        ),
-        room=ctx.room,
-    )
+    try:
+        logger.info("Starting AgentSession")
+        await session.start(
+            agent=Agent(
+                instructions=INSTRUCTIONS,
+                tools=llm.find_function_tools(assistant),
+            ),
+            room=ctx.room,
+        )
+        logger.info("AgentSession started successfully")
+    except Exception as e:
+        logger.error(f"Failed to start AgentSession: {e}")
+        raise
 
     # generate_reply triggers the agent to speak AND fires conversation_item_added
     # which will publish the message to chat — so we do NOT manually publish here
-    await session.generate_reply(
-        instructions=(
-            "Greet the caller with exactly this: "
-            "Hi! Thank you for calling AutoFix Workshop. "
-            "I am Aleena, your AI assistant. May I know your full name please? "
-            "Do NOT mention any mechanic names or appointment slots in the greeting."
+    try:
+        logger.info("Generating initial greeting reply")
+        await session.generate_reply(
+            instructions=(
+                "Greet the caller with exactly this: "
+                "Hi! Thank you for calling AutoFix Workshop. "
+                "I am Aleena, your AI assistant. May I know your full name please? "
+                "Do NOT mention any mechanic names or appointment slots in the greeting."
+            )
         )
-    )
-    logger.info("Greeting sent.")
+        logger.info("Greeting sent successfully")
+    except Exception as e:
+        logger.error(f"Failed to generate greeting reply: {e}")
+        raise
 
 
 if __name__ == "__main__":
