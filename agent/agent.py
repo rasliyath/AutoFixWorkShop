@@ -72,12 +72,10 @@ class AutoFixAssistant:
 
         # Basic per-field validation
         if field == "owner_name":
-            # Must look like an actual name: at least 2 words, no digits, not a sentence
+            # Must look like an actual name: no digits, not a sentence
             words = value.split()
             REJECT_PHRASES = {"i am ready", "i am here", "hello", "hi", "yes", "no",
                               "okay", "ok", "sure", "ready", "what", "nothing"}
-            if len(words) < 2:
-                return "Single word is not a full name. Ask for first and last name."
             if value.lower() in REJECT_PHRASES or value.lower().startswith("i am "):
                 return f"'{value}' does not look like a name. Ask the caller for their actual full name."
             if any(c.isdigit() for c in value):
