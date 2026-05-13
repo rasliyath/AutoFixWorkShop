@@ -12,7 +12,7 @@ import "./AutoFixWorkshop.css";
 
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
 const LIVEKIT_URL = import.meta.env.VITE_LIVEKIT_URL || "wss://autofix-workshop-yol0lzz9.livekit.cloud";
-const TOKEN_SERVER_URL = "http://localhost:3001/getToken";
+const TOKEN_SERVER_URL = `${import.meta.env.VITE_API_URL}/getToken`;
 
 const SLOTS = [
   { time: "9:00 AM", date: "Mon, 12 May", mechanic: "Ravi Kumar" },
