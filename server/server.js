@@ -14,6 +14,7 @@ app.use(express.json());
 
 const apiKey    = process.env.LIVEKIT_API_KEY;
 const apiSecret = process.env.LIVEKIT_API_SECRET;
+// const httpUrl   = process.env.LIVEKIT_URL || 'http://10.10.12.237:7881';
 const httpUrl   = (process.env.LIVEKIT_URL || '')
   .replace('wss://', 'https://')
   .replace('ws://',  'http://');
@@ -74,6 +75,48 @@ app.get('/getToken', async (req, res) => {
 
   } catch (err) {
     console.error('[getToken] Error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/startPhoneCall', async (req, res) => {
+  try {
+    // Cancel all existing agent dispatches for this room
+    try {
+      const dispatches = await dispatchSvc.listDispatches('autofix-receptionist-room');
+      console.log(`[phone-dispatch] Found ${dispatches?.length || 0} existing dispatch(es)`);
+      for (const d of (dispatches || [])) {
+        await dispatchSvc.deleteDispatch(d.dispatchId || d.id, 'autofix-receptionist-room');
+        console.log(`[phone-dispatch] Cancelled: ${d.dispatchId || d.id}`);
+      }
+    } catch (e) {
+      console.log(`[phone-dispatch] List/cancel skipped: ${e.message}`);
+    }
+
+    // Delete the room
+    try {
+      await roomSvc.deleteRoom('autofix-receptionist-room');
+      console.log(`[phone-room] Deleted: autofix-receptionist-room`);
+    } catch (e) {
+      console.log(`[phone-room] Delete skipped: ${e.message}`);
+    }
+
+    // Wait for cleanup
+    await sleep(5000);
+
+    // Dispatch exactly ONE agent
+    setTimeout(async () => {
+      try {
+        const dispatch = await dispatchSvc.createDispatch('autofix-receptionist-room', 'Aleena');
+        console.log(`[phone-dispatch] Created: ${dispatch.dispatchId || dispatch.id}`);
+      } catch (e) {
+        console.error(`[phone-dispatch] Failed: ${e.message}`);
+      }
+    }, 3000);
+
+    res.json({ message: 'Agent dispatched for phone call' });
+  } catch (err) {
+    console.error('[startPhoneCall] Error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });

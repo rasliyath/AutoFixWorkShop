@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useLayoutEffect } from "react";
 import {
   User, Clock, MessageSquare, Wrench, Power, Trash2, Mic
 } from "lucide-react";
@@ -13,6 +13,8 @@ import "./AutoFixWorkshop.css";
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
 const LIVEKIT_URL = import.meta.env.VITE_LIVEKIT_URL || "wss://autofix-workshop-yol0lzz9.livekit.cloud";
 const TOKEN_SERVER_URL = `${import.meta.env.VITE_API_URL}/getToken`;
+const PHONE_CALL_URL = `${import.meta.env.VITE_API_URL}/startPhoneCall`;
+const TWILIO_NUMBER = import.meta.env.VITE_TWILIO_NUMBER || "+19129334020";
 
 const SLOTS = [
   { time: "9:00 AM", date: "Mon, 12 May", mechanic: "Ravi Kumar" },
@@ -161,23 +163,23 @@ function SimulationHandler({ setMessages, setFieldMap, logAction, setAppointment
 
     const conversation = [
       { role: "agent", text: "Hi! Thank you for calling AutoFix Workshop. I'm Aleena, your AI assistant. May I know your full name please?", delay: 500 },
-      { role: "user",  text: "My name is Arjun Pillai", delay: 3500 },
+      { role: "user",  text: "My name is Arjun Pillai", delay: 3500, setsField: { key: "owner_name", value: "Arjun Pillai" } },
       { role: "agent", text: "What's your best contact number?", delay: 1500 },
-      { role: "user",  text: "+91 98470 12345", delay: 3000 },
+      { role: "user",  text: "+91 98470 12345", delay: 3000, setsField: { key: "phone", value: "+91 98470 12345" } },
       { role: "agent", text: "And what make is your vehicle?", delay: 1500 },
-      { role: "user",  text: "Toyota", delay: 2500 },
+      { role: "user",  text: "Toyota", delay: 2500, setsField: { key: "vehicle_make", value: "Toyota" } },
       { role: "agent", text: "Great — and the model?", delay: 1500 },
-      { role: "user",  text: "Innova Crysta", delay: 2500 },
+      { role: "user",  text: "Innova Crysta", delay: 2500, setsField: { key: "vehicle_model", value: "Innova Crysta" } },
       { role: "agent", text: "What year was it manufactured?", delay: 1500 },
-      { role: "user",  text: "2021", delay: 2000 },
+      { role: "user",  text: "2021", delay: 2000, setsField: { key: "year", value: "2021" } },
       { role: "agent", text: "Could you share the registration number?", delay: 1500 },
-      { role: "user",  text: "KL 07 AB 4512", delay: 3000 },
+      { role: "user",  text: "KL 07 AB 4512", delay: 3000, setsField: { key: "reg_number", value: "KL 07 AB 4512" } },
       { role: "agent", text: "Can you describe the issue you're experiencing?", delay: 1500 },
-      { role: "user",  text: "Engine is making a knocking sound and the check engine light is on", delay: 4000 },
+      { role: "user",  text: "Engine making a knocking sound and check engine light is on", delay: 4000, setsField: { key: "issue", value: "Engine making a knocking sound and check engine light is on" } },
       { role: "agent", text: "Is the car currently drivable or is it a breakdown situation?", delay: 1500 },
-      { role: "user",  text: "It's drivable but I'm worried", delay: 3000 },
+      { role: "user",  text: "It's drivable but I'm worried", delay: 3000, setsField: { key: "urgency", value: "Normal" } },
       { role: "agent", text: "I have a slot on Monday 12th May at 9 AM with Ravi Kumar — shall I confirm that for you?", delay: 1500 },
-      { role: "user",  text: "Yes please", delay: 2000 },
+      { role: "user",  text: "Yes please", delay: 2000, setsAppointment: SLOTS[0] },
       { role: "agent", text: "Done! You'll receive an SMS shortly. Is there anything else?", delay: 1500 },
     ];
 
@@ -189,24 +191,16 @@ function SimulationHandler({ setMessages, setFieldMap, logAction, setAppointment
       const t = setTimeout(() => {
         setMessages(prev => [...prev, { ...msg, time: nowStr() }]);
         logAction(`${msg.role === "agent" ? "Agent" : "User"}: ${msg.text.substring(0, 45)}...`);
+        if (msg.setsField) {
+          setFieldMap(prev => ({ ...prev, [msg.setsField.key]: { value: msg.setsField.value, confirmed: true } }));
+        }
+        if (msg.setsAppointment) {
+          setAppointment(msg.setsAppointment);
+          logAction("Appointment booked");
+        }
       }, cumulativeDelay);
       timeouts.push(t);
     });
-
-    // Populate mock data progressively
-    const fields = Object.entries(MOCK_ANSWERS).filter(([k]) => k !== "appointment");
-    fields.forEach(([key, value], i) => {
-      const t = setTimeout(() => {
-        setFieldMap(prev => ({ ...prev, [key]: { value, confirmed: true } }));
-      }, 5000 + i * 800);
-      timeouts.push(t);
-    });
-
-    const aptT = setTimeout(() => {
-      setAppointment(SLOTS[0]);
-      logAction("Appointment booked");
-    }, 12000);
-    timeouts.push(aptT);
 
     return () => timeouts.forEach(clearTimeout);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -221,8 +215,10 @@ function WorkshopDashboard({ isReal, isSummary, onEndCall, onBackToHome,
   const scrollRef = useRef(null);
 
   useEffect(() => {
-    if (scrollRef.current)
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    setTimeout(() => {
+      if (scrollRef.current)
+        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }, 0);
   }, [messages]);
 
   const FIELDS = ["owner_name", "phone", "vehicle_make", "vehicle_model", "year", "reg_number", "issue", "urgency"];
@@ -382,7 +378,7 @@ function WorkshopDashboard({ isReal, isSummary, onEndCall, onBackToHome,
 
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 export default function AutoFixWorkshop() {
-  const [callMode, setCallMode] = useState("idle"); // idle | real | sim | summary
+  const [callMode, setCallMode] = useState("idle"); // idle | real | sim | phone | summary
   const [token, setToken] = useState(null);
 
   const [messages,    setMessages]    = useState([]);
@@ -420,14 +416,31 @@ export default function AutoFixWorkshop() {
 
   const fetchToken = async () => {
     try {
+      console.log('Fetching token from server...');
       const identity = `user-${Math.floor(Math.random() * 9000) + 1000}`;
-      const res  = await fetch(`${TOKEN_SERVER_URL}?room=autofix-receptionist-room&identity=${identity}`);
+      const res = await fetch(`${TOKEN_SERVER_URL}?room=autofix-receptionist-room&identity=${identity}`);
       const data = await res.json();
       if (!data.token) throw new Error(data.error || "No token returned");
+      console.log('Token fetched successfully');
       setToken(data.token);
       setCallMode("real");
     } catch (e) {
+      console.error('Failed to fetch token:', e.message);
       alert(`Failed to connect: ${e.message}\n\nMake sure server/server.js is running on port 3001.`);
+    }
+  };
+
+  const startPhoneCall = async () => {
+    try {
+      console.log('Starting phone call setup...');
+      const res = await fetch(PHONE_CALL_URL);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to start phone call");
+      console.log('Phone call setup successful');
+      setCallMode("phone");
+    } catch (e) {
+      console.error('Failed to start phone call:', e.message);
+      alert(`Failed to start phone call: ${e.message}`);
     }
   };
 
@@ -473,6 +486,46 @@ export default function AutoFixWorkshop() {
   const dashboardProps = { messages, fieldMap, actionLog, appointment, smsAlert, timer, callerName, onEndCall: endCall, onBackToHome: backToHome };
   const handlerProps   = { setMessages, setFieldMap, logAction, setAppointment, setIsUrgent, setSmsAlert, setCallerName };
 
+  // ── PHONE CALL ─────────────────────────────────────────────────────────────
+  if (callMode === "phone") {
+    return (
+      <div className="auto-fix-workshop">
+        <div className="header">
+          <div className="logo">
+            <div className="logo-icon"><Wrench size={20} /></div>
+            <div>
+              <div className="logo-text">AutoFix Workshop</div>
+              <div className="logo-sub">Phone Call Mode</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="home-container">
+          <div className="home-hero">
+            <h1>Phone Call Ready</h1>
+            <p>The AI receptionist is waiting for your call. Dial the number below to connect.</p>
+            <div style={{ textAlign: 'center', margin: '20px 0' }}>
+              <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--primary)' }}>
+                {TWILIO_NUMBER}
+              </div>
+              <p style={{ marginTop: '10px', color: 'var(--muted)' }}>
+                Call this number to speak with Aleena, our AI receptionist.
+              </p>
+              <p style={{ marginTop: '5px', color: 'var(--amber)', fontSize: '0.9em' }}>
+                (Only Twilio-verified phone numbers configured for the SIP trunk can successfully place calls to this number.)
+              </p>
+            </div>
+            <div className="home-btns">
+              <button className="btn btn-primary" onClick={() => setCallMode("idle")}>
+                ← Back to Home
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // ── IDLE / HOME ────────────────────────────────────────────────────────────
   if (callMode === "idle") {
     return (
@@ -492,11 +545,14 @@ export default function AutoFixWorkshop() {
             <h1>Ready to repair?</h1>
             <p>Test our AI receptionist with a real voice call or simulation.</p>
             <div className="home-btns">
+              <button className="btn btn-secondary btn-xl" onClick={startPhoneCall}>
+                📞 Call Phone Number
+              </button>
               <button className="btn btn-primary btn-xl" onClick={fetchToken}>
-                <Mic size={22} style={{ marginRight: 10 }} /> Start Real Call
+                <Mic size={22} style={{ marginRight: 10 }} /> Voice Call (Browser)
               </button>
               <button className="btn btn-ghost btn-xl" onClick={() => setCallMode("sim")}>
-                <MessageSquare size={22} style={{ marginRight: 10 }} /> Simulation Mode
+                <MessageSquare size={22} style={{ marginRight: 10 }} /> Text Simulation
               </button>
             </div>
           </div>
