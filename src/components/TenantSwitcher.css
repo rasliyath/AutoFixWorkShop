@@ -1,0 +1,146 @@
+.tenant-switcher-container {
+  position: relative;
+  font-family: inherit;
+}
+
+.tenant-trigger {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  padding: 6px 14px 6px 8px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 220px;
+  text-align: left;
+}
+
+.tenant-trigger:hover {
+  border-color: var(--muted);
+  background: var(--surface);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.tenant-icon-wrap {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.tenant-label {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.tenant-name {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.tenant-sub {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: var(--mono);
+}
+
+.chevron {
+  color: var(--muted);
+  transition: transform 0.2s;
+}
+
+.chevron.open {
+  transform: rotate(180deg);
+}
+
+/* ── MENU ────────────────────────────────────────────────────────────────── */
+.tenant-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.3);
+  padding: 8px;
+  z-index: 1000;
+  animation: menuIn 0.2s ease-out;
+  backdrop-filter: blur(10px);
+}
+
+@keyframes menuIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.menu-header {
+  padding: 8px 12px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  font-family: var(--mono);
+}
+
+.menu-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+  margin-bottom: 2px;
+}
+
+.menu-item:hover {
+  background: rgba(255,255,255,0.05);
+}
+
+.menu-item.active {
+  background: rgba(255,255,255,0.03);
+}
+
+.menu-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.menu-text {
+  flex: 1;
+}
+
+.menu-name {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.menu-sub {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.check-icon {
+  color: var(--green);
+}

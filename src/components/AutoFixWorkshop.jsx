@@ -491,13 +491,7 @@ export default function AutoFixWorkshop() {
     return (
       <div className="auto-fix-workshop">
         <div className="header">
-          <div className="logo">
-            <div className="logo-icon"><Wrench size={20} /></div>
-            <div>
-              <div className="logo-text">AutoFix Workshop</div>
-              <div className="logo-sub">Phone Call Mode</div>
-            </div>
-          </div>
+          {/* Logo handled by Global Header */}
         </div>
 
         <div className="home-container">
@@ -530,14 +524,8 @@ export default function AutoFixWorkshop() {
   if (callMode === "idle") {
     return (
       <div className="auto-fix-workshop">
-        <div className="header">
-          <div className="logo">
-            <div className="logo-icon"><Wrench size={20} /></div>
-            <div>
-              <div className="logo-text">AutoFix Workshop</div>
-              <div className="logo-sub">LiveKit AI Receptionist</div>
-            </div>
-          </div>
+        <div className="header" style={{ display: 'none' }}>
+          {/* Logo handled by Global Header */}
         </div>
 
         <div className="home-container">
@@ -593,12 +581,8 @@ export default function AutoFixWorkshop() {
   return (
     <div className="auto-fix-workshop">
       <div className="header">
-        <div className="logo">
-          <div className="logo-icon"><Wrench size={20} /></div>
-          <div>
-            <div className="logo-text">AutoFix Workshop</div>
-            <div className="logo-sub">LiveKit AI Receptionist</div>
-          </div>
+        <div className="logo" style={{ visibility: 'hidden' }}>
+          {/* Spacer to keep badges on the right */}
         </div>
         <div className="badges">
           <span className="tag">{callMode === "summary" ? "Reviewing Call" : callMode === "real" ? "LiveKit Room" : "Mock Flow"}</span>

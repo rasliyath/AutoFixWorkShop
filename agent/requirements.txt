@@ -4,3 +4,10 @@ livekit-plugins-deepgram
 livekit-plugins-cartesia
 livekit-plugins-silero
 python-dotenv
+flask
+flask-cors
+openai
+requests
+livekit-api
+PyPDF2
+pymongo
