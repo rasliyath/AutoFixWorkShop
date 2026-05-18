@@ -12,7 +12,9 @@ load_dotenv()
 logger = logging.getLogger("medical-agent")
 logging.basicConfig(level=logging.INFO)
 
-FLASK_URL = "http://localhost:5001"
+# Allow overriding the Flask backend URL via environment (set FLASK_URL).
+# Default to localhost for local development.
+FLASK_URL = os.getenv("FLASK_URL", "http://localhost:5001")
 
 # ─── IDENTITY DETECTION ───────────────────────────────────────────────────────
 # Outbound calls set identity = patient UUID  (e.g. "1aa72e6-0dc6-469d-a0b2-...")

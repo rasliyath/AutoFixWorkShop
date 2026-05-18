@@ -21,7 +21,8 @@ import {
 } from "lucide-react";
 import "./MedicalCare.css";
 
-const BASE_URL = "http://localhost:5001";
+// Use Vite env var `VITE_API_URL` in production/deployments. Falls back to localhost for dev.
+const BASE_URL = (import.meta && import.meta.env && import.meta.env.VITE_API_URL) || "http://localhost:5001";
 
 function fmtDuration(started, ended) {
   if (!started) return "—";
